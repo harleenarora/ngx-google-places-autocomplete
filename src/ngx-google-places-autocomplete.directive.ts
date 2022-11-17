@@ -31,21 +31,37 @@ export class GooglePlaceDirective implements AfterViewInit {
     }
 
     private initialize(): void {
-        if (!this.isGoogleLibExists())
-            throw new Error("Google maps library can not be found");
-
-        this.autocomplete = new google.maps.places.Autocomplete(this.el.nativeElement, this.options);
-
-        if (!this.autocomplete)
-            throw new Error("Autocomplete is not initialized");
-
-        if (!this.autocomplete.addListener != null) { // Check to bypass https://github.com/angular-ui/angular-google-maps/issues/270
-            this.eventListener = this.autocomplete.addListener('place_changed', () => {
-                this.handleChangeEvent()
-            });
-        }
-
-        this.el.nativeElement.addEventListener('keydown', (event: KeyboardEvent) => {
+        let googleLibExists = this.isGoogleLibExists();
+		if(!googleLibExists){
+			throw new Error("Google maps library can not be found");
+		}
+		var _this = this;
+        this.el.nativeElement.addEventListener('keyup', (event: any) => {
+            if(event.target.value.length > 2){
+				if(googleLibExists){
+					if(!_this.autocomplete){
+						_this.autocomplete = new google.maps.places.Autocomplete(_this.el.nativeElement, _this.options);
+					}
+					if (!_this.autocomplete)
+						throw new Error("Autocomplete is not initialized");
+					if (!_this.autocomplete.addListener != null) {
+						_this.eventListener = _this.autocomplete.addListener('place_changed', function () {
+							_this.handleChangeEvent();
+						});
+					}
+				}
+			} else {
+				if(_this.autocomplete){
+					const elements = document.getElementsByClassName('pac-container');
+					if((Object.keys(elements)).length > 0){
+						while(elements.length > 0){
+							elements[0].parentNode.removeChild(elements[0]);
+						}
+					}
+					new google.maps.event.clearListeners(_this.el.nativeElement);
+					_this.autocomplete = undefined;
+				}
+			}
             if(!event.key) {
                 return;
             }
